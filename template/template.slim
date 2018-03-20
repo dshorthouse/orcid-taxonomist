@@ -16,7 +16,7 @@ html
       $(function() {
         $('#taxonomists').DataTable({
           order: [[0, "desc"]],
-          "pageLength": 50
+          "pageLength": 100
         });
       });
 
@@ -37,24 +37,24 @@ html
             a href="https://orcid.org" ORCID
             |  accounts with keyword "taxonomist" or "taxonomy". Taxa of specialty pulled from the titles of linked works and fed to the 
             a href="http://gnrd.globalnames.org" Global Names Recognition and Discovery
-            |  service.
+            |  service. This list is regenerated once a day. Current total: #{entries.count}.
 
       table#taxonomists.table.table-striped.table-bordered
         thead
           tr
             th(style="width:10%") Date Added
             th(style="width:10%") Given Names
-            th(style="width:20%") Family Name
-            th{style="width:20%"} Country
-            th{style="width:20%"} Speciality
+            th(style="width:15%") Family Name
+            th{style="width:10%"} Country
+            th{style="width:30%"} Speciality
             th(style="width:20%") ORCID
         tbody
           - entries.each do |entry|
             tr
-              td = entry[:created]
+              td = entry[:created].strftime('%Y-%m-%d')
               td = entry[:given_names]
               td = entry[:family_name]
               td = entry[:country]
               td = entry[:taxa]
               td
-                a href="https://orcid.org/#{entry[:orcid]}" #{entry[:orcid]}
+                a href="https://orcid.org/#{entry[:orcid]}" https://orcid.org/#{entry[:orcid]}

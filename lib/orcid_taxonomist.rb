@@ -14,10 +14,11 @@ class OrcidTaxonomist
       database: @config[:database],
       password: @config[:password]
       )
+    @orcids = []
   end
 
   def populate_taxonomists
-    (search_orcids - @db[:taxonomists].map(:orcid)).each do |orcid|
+    (search_orcids.to_a - @db[:taxonomists].map(:orcid)).each do |orcid|
       orcid_url = "https://pub.orcid.org/v2.1/#{orcid}/person"
       req = Typhoeus.get(orcid_url, headers: orcid_header)
       json = JSON.parse(req.body, symbolize_names: true)
@@ -38,9 +39,9 @@ class OrcidTaxonomist
       orcid_url = "https://pub.orcid.org/v2.1/#{t[:orcid]}/works"
       req = Typhoeus.get(orcid_url, headers: orcid_header)
       json = JSON.parse(req.body, symbolize_names: true)
-      titles = json[:group].map{|a| a[:"work-summary"][0][:title][:title][:value]}.join(" ")
       gnrd_url = "http://gnrd.globalnames.org/name_finder.json"
       begin
+        titles = json[:group].map{|a| a[:"work-summary"][0][:title][:title][:value]}.join(" ")
         req = Typhoeus.post(gnrd_url, body: { text: titles, unique: true }, followlocation: true)
         json = JSON.parse(req.body, symbolize_names: true)
         if json[:names]
@@ -106,10 +107,22 @@ class OrcidTaxonomist
   end
 
   def search_orcids
-    orcid_search_url = "https://pub.orcid.org/v2.1/search?q=keyword%3Ataxonomist%20OR%20taxonomy"
-    req = Typhoeus.get(orcid_search_url, headers: orcid_header)
-    JSON.parse(req.body, symbolize_names: true)[:result]
-        .map{|o| o[:"orcid-identifier"][:path]} rescue []
+    Enumerator.new do |yielder|
+      start = 1
+
+      loop do
+        orcid_search_url = "https://pub.orcid.org/v2.1/search?q=keyword%3Ataxonomist%20OR%20keyword:taxonomy&start=#{start}&rows=100"
+        req = Typhoeus.get(orcid_search_url, headers: orcid_header)
+        results = JSON.parse(req.body, symbolize_names: true)[:result]
+
+        if results
+          results.map { |item| yielder << item[:"orcid-identifier"][:path] }
+          start += 100
+        else
+          raise StopIteration
+        end
+      end
+    end.lazy
   end
 
 end
