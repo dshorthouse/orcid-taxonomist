@@ -30,10 +30,10 @@ begin
   ENV["ENVIRONMENT"] = options[:environment].nil? ? "development" : options[:environment]
   raise "Config file not found" unless File.exists?(config_file)
 
-  ot = OrcidTaxonomist.new({ config_file: config_file, delete_messages: options[:trash] })
+  ot = OrcidTaxonomist.new({ config_file: config_file })
 
   ot.populate_taxonomists
-  ot.populate_works
+  ot.populate_taxa
 
   ot.write_webpage
   puts "Done".green

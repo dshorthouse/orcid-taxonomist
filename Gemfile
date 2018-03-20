@@ -13,6 +13,7 @@ gem 'slim'
 gem 'parallel'
 gem 'colorize'
 gem 'serrano'
+gem 'iso_country_codes'
 
 group :production do
 end
