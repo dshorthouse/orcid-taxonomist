@@ -35,21 +35,11 @@ class OrcidTaxonomist
 
   def populate_taxa
     @db[:taxonomists].where(status: 0).each do |t|
-      orcid_url = "#{ORCID_API}/#{t[:orcid]}/works"
-      req = Typhoeus.get(orcid_url, headers: orcid_header)
-      json = JSON.parse(req.body, symbolize_names: true)
-      begin
-        titles = json[:group].map{|a| a[:"work-summary"][0][:title][:title][:value]}
-                             .join(" ")
-        req = Typhoeus.post(GNRD_API, body: { text: titles, unique: true }, followlocation: true)
-        json = JSON.parse(req.body, symbolize_names: true)
-        if json[:names]
-          names = json[:names].map{|o| o[:scientificName]}.compact.uniq.sort
-          bulk = Array.new(names.count, t[:id]).zip(names)
-          @db[:taxa].import([:taxonomist_id, :taxon], bulk)
-        end
-      rescue
-        puts "taxonomist_id #{t[:id]} scientificName extraction failed"
+      works = orcid_works(t[:orcid])
+      scientific_names = gnrd_names(works.join(" "))
+      if scientific_names
+        bulk = Array.new(scientific_names.count, t[:id]).zip(scientific_names)
+        @db[:taxa].import([:taxonomist_id, :taxon], bulk)
       end
       @db[:taxonomists].where(id: t[:id]).update(status: 1)
     end
@@ -92,7 +82,13 @@ class OrcidTaxonomist
     @db[:taxonomists].each do |t|
       o = orcid_metadata(t[:orcid])
       if t[:orcid_updated] != o[:orcid_updated]
-        #TODO: get the taxa from paper titles here & update as required
+        existing_taxa = @db[:taxa].where(taxonomist_id: t[:id]).map(:taxa)
+        works = orcid_works(t[:orcid])
+        scientific_names = gnrd_names(works.join(" ")) - existing_taxa
+        if !scientific_names.empty?
+          bulk = Array.new(scientific_names.count, t[:id]).zip(scientific_names)
+          @db[:taxa].import([:taxonomist_id, :taxon], bulk)
+        end
         @db[:taxonomists].where(id: t[:id]).update(o)
       end
     end
@@ -130,6 +126,19 @@ class OrcidTaxonomist
       orcid_created: orcid_created,
       orcid_updated: orcid_updated
     }
+  end
+
+  def orcid_works(orcid)
+    orcid_url = "#{ORCID_API}/#{orcid}/works"
+    req = Typhoeus.get(orcid_url, headers: orcid_header)
+    json = JSON.parse(req.body, symbolize_names: true)
+    json[:group].map{|a| a[:"work-summary"][0][:title][:title][:value]} rescue []
+  end
+
+  def gnrd_names(text)
+    req = Typhoeus.post(GNRD_API, body: { text: text, unique: true }, followlocation: true)
+    json = JSON.parse(req.body, symbolize_names: true)
+    json[:names].map{|o| o[:scientificName]}.compact.uniq.sort rescue []
   end
 
   def search_orcids
