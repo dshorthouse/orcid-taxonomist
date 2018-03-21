@@ -32,8 +32,8 @@ begin
 
   ot = OrcidTaxonomist.new({ config_file: config_file })
 
-#  ot.populate_taxonomists
-#  ot.populate_taxa
+  ot.populate_taxonomists
+  ot.populate_taxa
 
   ot.write_webpage
   puts "Done".green
