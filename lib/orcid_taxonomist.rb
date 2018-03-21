@@ -21,17 +21,14 @@ class OrcidTaxonomist
 
   def populate_taxonomists
     (search_orcids.to_a - @db[:taxonomists].map(:orcid)).each do |orcid|
-      orcid_url = "#{ORCID_API}/#{orcid}/person"
-      req = Typhoeus.get(orcid_url, headers: orcid_header)
-      json = JSON.parse(req.body, symbolize_names: true)
-      given_names = json[:name][:"given-names"][:value] rescue nil
-      family_name = json[:name][:"family-name"][:value] rescue nil
-      country = json[:addresses][:address][0][:country][:value] rescue nil
+      o = orcid_metadata(orcid)
       @db[:taxonomists].insert(
         orcid: orcid,
-        given_names: given_names,
-        family_name: family_name,
-        country: country
+        given_names: o[:given_names],
+        family_name: o[:family_name],
+        country: o[:country],
+        orcid_created: o[:orcid_created],
+        orcid_updated: o[:orcid_updated]
       )
     end
   end
@@ -71,7 +68,7 @@ class OrcidTaxonomist
         t.created 
       FROM 
         taxonomists t
-      ORDER BY t.created DESC"
+      ORDER BY t.family_name"
     @db[sql].each do |row|
       if row[:country]
         code = IsoCountryCodes.find(row[:country])
@@ -91,6 +88,16 @@ class OrcidTaxonomist
     html
   end
 
+  def update_taxonomists
+    @db[:taxonomists].each do |t|
+      o = orcid_metadata(t[:orcid])
+      if t[:orcid_updated] != o[:orcid_updated]
+        #TODO: get the taxa from paper titles here & update as required
+        @db[:taxonomists].where(id: t[:id]).update(o)
+      end
+    end
+  end
+
   private
 
   def root
@@ -105,6 +112,24 @@ class OrcidTaxonomist
 
   def orcid_header
     { 'Accept': 'application/orcid+json' }
+  end
+
+  def orcid_metadata(orcid)
+    orcid_url = "#{ORCID_API}/#{orcid}/person"
+    req = Typhoeus.get(orcid_url, headers: orcid_header)
+    json = JSON.parse(req.body, symbolize_names: true)
+    given_names = json[:name][:"given-names"][:value] rescue nil
+    family_name = json[:name][:"family-name"][:value] rescue nil
+    country = json[:addresses][:address][0][:country][:value] rescue nil
+    orcid_created = json[:name][:"created-date"][:value] rescue nil
+    orcid_updated = json[:"last-modified-date"][:value] rescue nil
+    {
+      given_names: given_names,
+      family_name: family_name,
+      country: country,
+      orcid_created: orcid_created,
+      orcid_updated: orcid_updated
+    }
   end
 
   def search_orcids

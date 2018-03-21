@@ -16,6 +16,7 @@ require 'parallel'
 require 'colorize'
 require 'serrano'
 require 'iso_country_codes'
+require 'date'
 require 'byebug'
 
 Dir[File.dirname(__FILE__) + "/lib/*.rb"].each{ |file| require file }
