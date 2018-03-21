@@ -50,7 +50,7 @@ html
       .jumbotron
         h1 World Taxonomists
         p.lede
-          | This is a small but ever-growing compendium of the world's active taxonomists that have an 
+          | This proof-of-concept is a small but ever-growing compendium of the world's active taxonomists that have an 
           a href="https://orcid.org" ORCID
           |  account with the self-assigned keyword 
           em taxonomist
@@ -58,12 +58,14 @@ html
           em taxonomy
           | . Their taxa of specialty are found from the titles of their linked works using the 
           a href="http://gnrd.globalnames.org" Global Names Recognition and Discovery
-          |  service.
+          |  service. The code that generates this list can be found 
+          a href="https://github.com/dshorthouse/orcid-taxonomist" here
+          | .
         p.lede
           | Current total: 
           strong #{entries.count}
           br
-          | Started 2018-03-19, 
+          | Started 2018-03-19 in the spirit of  
           a href="https://twitter.com/hashtag/taxonomistappreciationday" #TaxonomistAppreciationDay
           |  and regenerated once a day.
         p.lede
