@@ -2,6 +2,9 @@
 
 class OrcidTaxonomist
 
+  ORCID_API = "https://pub.orcid.org/v2.1"
+  GNRD_API = "http://gnrd.globalnames.org/name_finder.json"
+
   def initialize args
     args.each do |k,v|
       instance_variable_set("@#{k}", v) unless v.nil?
@@ -14,12 +17,11 @@ class OrcidTaxonomist
       database: @config[:database],
       password: @config[:password]
       )
-    @orcids = []
   end
 
   def populate_taxonomists
     (search_orcids.to_a - @db[:taxonomists].map(:orcid)).each do |orcid|
-      orcid_url = "https://pub.orcid.org/v2.1/#{orcid}/person"
+      orcid_url = "#{ORCID_API}/#{orcid}/person"
       req = Typhoeus.get(orcid_url, headers: orcid_header)
       json = JSON.parse(req.body, symbolize_names: true)
       given_names = json[:name][:"given-names"][:value] rescue nil
@@ -36,13 +38,13 @@ class OrcidTaxonomist
 
   def populate_taxa
     @db[:taxonomists].where(status: 0).each do |t|
-      orcid_url = "https://pub.orcid.org/v2.1/#{t[:orcid]}/works"
+      orcid_url = "#{ORCID_API}/#{t[:orcid]}/works"
       req = Typhoeus.get(orcid_url, headers: orcid_header)
       json = JSON.parse(req.body, symbolize_names: true)
-      gnrd_url = "http://gnrd.globalnames.org/name_finder.json"
       begin
-        titles = json[:group].map{|a| a[:"work-summary"][0][:title][:title][:value]}.join(" ")
-        req = Typhoeus.post(gnrd_url, body: { text: titles, unique: true }, followlocation: true)
+        titles = json[:group].map{|a| a[:"work-summary"][0][:title][:title][:value]}
+                             .join(" ")
+        req = Typhoeus.post(GNRD_API, body: { text: titles, unique: true }, followlocation: true)
         json = JSON.parse(req.body, symbolize_names: true)
         if json[:names]
           names = json[:names].map{|o| o[:scientificName]}.compact.uniq.sort
@@ -58,7 +60,6 @@ class OrcidTaxonomist
 
   def write_webpage
     output = {
-      generation_time: Time.now.strftime('%Y-%m-%d %H:%M:%S'),
       entries: []
     }
     sql = "SELECT 
@@ -111,7 +112,7 @@ class OrcidTaxonomist
       start = 1
 
       loop do
-        orcid_search_url = "https://pub.orcid.org/v2.1/search?q=keyword%3Ataxonomist%20OR%20keyword:taxonomy&start=#{start}&rows=100"
+        orcid_search_url = "#{ORCID_API}/search?q=keyword%3Ataxonomist%20OR%20keyword:taxonomy&start=#{start}&rows=100"
         req = Typhoeus.get(orcid_search_url, headers: orcid_header)
         results = JSON.parse(req.body, symbolize_names: true)[:result]
 

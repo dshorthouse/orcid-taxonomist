@@ -1,7 +1,7 @@
 doctype html
 html
   head
-    title #TaxonomistAppreciationDay Campaign
+    title World Taxonomists
     meta charset="utf-8"
     meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"
     meta name="ROBOTS" content="NOINDEX, NOFOLLOW"
@@ -12,10 +12,35 @@ html
     script src="https://cdn.datatables.net/1.10.16/js/dataTables.bootstrap.min.js"
     css:
       .orcid{vertical-align:middle; margin-right:4px;}
+      #connect-orcid-button{
+      	border: 1px solid #D3D3D3;
+      	padding: .3em;
+      	background-color: #fff;
+      	border-radius: 8px;
+      	box-shadow: 1px 1px 3px #999;
+      	cursor: pointer;
+      	color: #999;
+      	font-weight: bold;
+      	font-size: .8em;
+      	line-height: 24px;
+      	vertical-align: middle;
+      }
+
+      #connect-orcid-button:hover{
+      	border: 1px solid #338caf;
+      	color: #338caf;
+      }
+
+      #orcid-id-logo{
+      	display: block;
+      	margin: 0 .5em 0 0;
+      	padding: 0;
+      	float: left;
+      }
     javascript:
       $(function() {
         $('#taxonomists').DataTable({
-          order: [[0, "desc"]],
+          order: [[1, "asc"]],
           "pageLength": 100
         });
       });
@@ -23,35 +48,41 @@ html
   body
     .container-fluid
       .jumbotron
-        h1
+        h1 World Taxonomists
+        p.lede
+          | This is a small but ever-growing compendium of the World's Taxonomists that have an 
+          a href="https://orcid.org" ORCID
+          |  account with the keyword 
+          em taxonomist
+          |  or 
+          em taxonomy
+          | . Their taxa of specialty are found from the titles of their linked works using the 
+          a href="http://gnrd.globalnames.org" Global Names Recognition and Discovery
+          |  service.
+        p.lede
+          | Current total: 
+          strong #{entries.count}
+          br
+          | Started 2018-03-19, 
           a href="https://twitter.com/hashtag/taxonomistappreciationday" #TaxonomistAppreciationDay
-          br Twitter Campaign
-        p.lede 
-            strong Started
-            ': 2018-03-19 
-            strong Last generated
-            ': #{generation_time} 
-            strong
-                a href="https://github.com/dshorthouse/orcid-taxonomist" Code
-        p.lede 
-            a href="https://orcid.org" ORCID
-            |  accounts with keyword "taxonomist" or "taxonomy". Taxa of specialty pulled from the titles of linked works and fed to the 
-            a href="http://gnrd.globalnames.org" Global Names Recognition and Discovery
-            |  service. This list is regenerated once a day. Current total: #{entries.count}.
+          |  and regenerated once a day.
+        p.lede
+          a href="https://orcid.org/"
+            button id="connect-orcid-button"
+              img id="orcid-id-logo" src="https://orcid.org/sites/default/files/images/orcid_24x24.png" width="24" height="24" alt="ORCID logo" 
+                | Create your ORCID iD
 
       table#taxonomists.table.table-striped.table-bordered
         thead
           tr
-            th(style="width:10%") Date Added
             th(style="width:10%") Given Names
             th(style="width:15%") Family Name
             th{style="width:10%"} Country
-            th{style="width:30%"} Speciality
+            th{style="width:40%"} Speciality
             th(style="width:20%") ORCID
         tbody
           - entries.each do |entry|
             tr
-              td = entry[:created].strftime('%Y-%m-%d')
               td = entry[:given_names]
               td = entry[:family_name]
               td = entry[:country]
