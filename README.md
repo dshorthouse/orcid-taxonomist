@@ -1,3 +1,5 @@
+THIS APPLICATION IS DEPRECATED IN FAVOUR OF [https://github.com/dshorthouse/orcid-taxonomist-couchdb](https://github.com/dshorthouse/orcid-taxonomist-couchdb)
+
 ORCID Taxonomist
 ===============================================
 Ruby application that queries the ORCID API for user profiles containing keyword 'taxonomist' or 'taxonomy' then feeds the titles of their linked works to the Global Names Recognition and Discovery service to indicate the ORCID account holder's area of taxonomic expertise.
